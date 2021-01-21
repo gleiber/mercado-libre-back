@@ -86,6 +86,8 @@ const authenticateJWT = (req, res, next) => {
  */
 app.get("/api/items", authenticateJWT, (req, res) => {
   // inicializar variables
+  const propertiesObject = req.query.q;
+  const queryObject = url.parse(req.url, true).query;
   author = req.user;
   const requestQuery = {
     method: "GET",
@@ -93,9 +95,6 @@ app.get("/api/items", authenticateJWT, (req, res) => {
     headers: {},
   };
 
-  var propertiesObject = req.query.q;
-  const queryObject = url.parse(req.url, true).query;
-  console.log(queryObject);
   request(requestQuery, propertiesObject, async (err, response, body) => {
     if (!err) {
       let jsonResponse = {};
@@ -163,7 +162,6 @@ app.get("/api/items/:id", authenticateJWT, (req, res) => {
     headers: {},
   };
 
-  const queryObject = url.parse(req.url, true).query;
   request(requestId, async (err, response, body) => {
     if (!err) {
       let promise = new Promise((resolve, reject) => {
