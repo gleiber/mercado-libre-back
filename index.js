@@ -4,6 +4,8 @@ var app = express();
 var cors = require("cors");
 const request = require("request");
 const url = require("url");
+const jwt = require("express-jwt");
+const jsonwebtoken = require("jsonwebtoken");
 
 /* funciones auxiliares */
 Array.prototype.unique = (function (a) {
@@ -38,13 +40,48 @@ parseMil = (price) => {
 
 app.use(cors());
 /* Apis */
+
+const jwtSecret = "gleiberCarreño";
+app.get("/firmApi", (req, res) => {
+  res.json({
+    token: jsonwebtoken.sign(
+      {
+        name: "Gleiber",
+        lastname: "Carreño",
+      },
+      jwtSecret
+    ),
+  });
+});
+app.use(jwt({ secret: jwtSecret, algorithms: ["HS256"] }));
+
+const authenticateJWT = (req, res, next) => {
+  console.log("estro aqui");
+  const authHeader = req.headers.authorization;
+
+  if (authHeader) {
+    const token = authHeader.split(" ")[1];
+
+    jsonwebtoken.verify(token, jwtSecret, (err, user) => {
+      if (err) {
+        return res.sendStatus(403);
+      }
+
+      req.user = user;
+      next();
+    });
+  } else {
+    res.sendStatus(401);
+  }
+};
+
 app.get("/", (req, res) => {
   res.status(200).send("Welcome to API REST");
 });
 
-app.get("/api/items", (req, res) => {
+app.get("/api/items", authenticateJWT, (req, res) => {
   // inicializar variables
-
+  console.log("request", req);
   author = {
     name: "Gleiber",
     lastname: "Carreño",
@@ -72,16 +109,6 @@ app.get("/api/items", (req, res) => {
         };
         res.send(jsonRespuesta);
       } else {
-        if (
-          responseQuery.filters[0].values[0] !== undefined ||
-          responseQuery.filters[0].values[0] !== null
-        ) {
-          for (const item of responseQuery.filters[0].values[0]
-            .path_from_root) {
-            arrayCategory.push(item.name);
-          }
-        }
-
         for (const result of responseQuery.results) {
           items.push({
             id: result.id,
@@ -97,13 +124,22 @@ app.get("/api/items", (req, res) => {
             free_shipping: result.shipping.free_shipping,
           });
         }
+        if (
+          responseQuery.filters[0].values[0] !== undefined ||
+          responseQuery.filters[0].values[0] !== null
+        ) {
+          for (const item of responseQuery.filters[0].values[0]
+            .path_from_root) {
+            arrayCategory.push(item.name);
+          }
+        }
 
         jsonResponse = {
           author,
           categories: arrayCategory.unique(),
           items: items.slice(0, 4),
         };
-        res.send(jsonResponse);
+        await res.send(jsonResponse);
       }
     }
   });
