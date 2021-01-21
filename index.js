@@ -55,8 +55,13 @@ app.get("/firmApi", (req, res) => {
 });
 app.use(jwt({ secret: jwtSecret, algorithms: ["HS256"] }));
 
+/**
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
 const authenticateJWT = (req, res, next) => {
-  console.log("estro aqui");
   const authHeader = req.headers.authorization;
 
   if (authHeader) {
@@ -75,17 +80,12 @@ const authenticateJWT = (req, res, next) => {
   }
 };
 
-app.get("/", (req, res) => {
-  res.status(200).send("Welcome to API REST");
-});
-
+/**
+ *
+ */
 app.get("/api/items", authenticateJWT, (req, res) => {
   // inicializar variables
-  console.log("request", req);
-  author = {
-    name: "Gleiber",
-    lastname: "Carreño",
-  };
+  author = req.user;
   const requestQuery = {
     method: "GET",
     url: "https://api.mercadolibre.com/sites/MLA/search?q=" + req.query.q,
@@ -94,6 +94,7 @@ app.get("/api/items", authenticateJWT, (req, res) => {
 
   var propertiesObject = req.query.q;
   const queryObject = url.parse(req.url, true).query;
+  console.log(queryObject);
   request(requestQuery, propertiesObject, async (err, response, body) => {
     if (!err) {
       let jsonResponse = {};
@@ -145,7 +146,7 @@ app.get("/api/items", authenticateJWT, (req, res) => {
   });
 });
 
-app.get("/api/items/:id", (req, res) => {
+app.get("/api/items/:id", authenticateJWT, (req, res) => {
   // Retrieve the tag from our URL path
   if (req.params.id === null) {
     const jsonError = {
@@ -183,10 +184,7 @@ app.get("/api/items/:id", (req, res) => {
       const responseQueryId = JSON.parse(body);
 
       jsonResponseId = {
-        author: {
-          name: "Gleiber",
-          lastname: "Carreño",
-        },
+        author: req.user,
         item: {
           id: responseQueryId.id,
           title: responseQueryId.title,
