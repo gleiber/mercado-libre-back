@@ -13,7 +13,6 @@ Array.prototype.unique = (function (a) {
 })(function (a, b, c) {
   return c.indexOf(a, b + 1) < 0;
 });
-
 Number.prototype.countDecimals = function () {
   if (Math.floor(this.valueOf()) === this.valueOf()) return 0;
   return this.toString().split(".")[1].length || 0;
@@ -44,19 +43,18 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/items", (req, res) => {
-  /*if (req.params.q === undefined) {
-    const jsonError = {
-      status: "400",
-      error: "Faltan parametros",
-    };
+  // inicializar variables
 
-    res.send(jsonError);
-  }*/
+  author = {
+    name: "Gleiber",
+    lastname: "Carreño",
+  };
   const requestQuery = {
     method: "GET",
     url: "https://api.mercadolibre.com/sites/MLA/search?q=" + req.query.q,
     headers: {},
   };
+
   var propertiesObject = req.query.q;
   const queryObject = url.parse(req.url, true).query;
   request(requestQuery, propertiesObject, async (err, response, body) => {
@@ -65,26 +63,12 @@ app.get("/api/items", (req, res) => {
       const arrayCategory = [];
       const items = [];
       const responseQuery = await JSON.parse(body);
+
       if (responseQuery.results.length === 0) {
         const jsonRespuesta = {
-          author: {
-            name: "Gleiber",
-            lastname: "Carreño",
-          },
-          categories: [],
-          items: {
-            id: "",
-            title: "",
-
-            price: {
-              currency: "",
-              amount: "",
-              decimals: "",
-            },
-            picture: "",
-            condition: "",
-            free_shipping: "",
-          },
+          author,
+          categories: null,
+          items: null,
         };
         res.send(jsonRespuesta);
       } else {
@@ -115,10 +99,7 @@ app.get("/api/items", (req, res) => {
         }
 
         jsonResponse = {
-          author: {
-            name: "Gleiber",
-            lastname: "Carreño",
-          },
+          author,
           categories: arrayCategory.unique(),
           items: items.slice(0, 4),
         };
