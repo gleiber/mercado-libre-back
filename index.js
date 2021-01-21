@@ -20,7 +20,11 @@ Number.prototype.countDecimals = function () {
   return this.toString().split(".")[1].length || 0;
 };
 
-parseMil = (price) => {
+/**
+ *
+ * @param {*} price
+ */
+const parseMil = (price) => {
   let num = price;
   const coma = num.toString().indexOf(".") !== -1 ? true : false;
 
