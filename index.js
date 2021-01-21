@@ -18,6 +18,24 @@ Number.prototype.countDecimals = function () {
   if (Math.floor(this.valueOf()) === this.valueOf()) return 0;
   return this.toString().split(".")[1].length || 0;
 };
+parseMil = (price) => {
+  let num = price;
+  const coma = num.toString().indexOf(".") !== -1 ? true : false;
+
+  let number = num.toString().split(".");
+  if (coma === true) {
+    number = number[0] + "," + number[1];
+  }
+
+  num = number
+    .toString()
+    .split("")
+    .reverse()
+    .join("")
+    .replace(/(?=\d*\.?)(\d{3})/g, "$1.");
+  num = num.split("").reverse().join("").replace(/^[\.]/, "");
+  return num;
+};
 
 app.use(cors());
 /* Apis */
@@ -41,40 +59,71 @@ app.get("/api/items", (req, res) => {
   };
   var propertiesObject = req.query.q;
   const queryObject = url.parse(req.url, true).query;
-  request(requestQuery, propertiesObject, (err, response, body) => {
+  request(requestQuery, propertiesObject, async (err, response, body) => {
     if (!err) {
       let jsonResponse = {};
       const arrayCategory = [];
       const items = [];
-      const responseQuery = JSON.parse(body);
-
-      for (const result of responseQuery.results) {
-        arrayCategory.push(result.category_id);
-        items.push({
-          id: result.id,
-          title: result.title,
-
-          price: {
-            currency: result.currency_id,
-            amount: result.price,
-            decimals: result.price.countDecimals(),
+      const responseQuery = await JSON.parse(body);
+      if (responseQuery.results.length === 0) {
+        const jsonRespuesta = {
+          author: {
+            name: "Gleiber",
+            lastname: "Carreño",
           },
-          picture: result.thumbnail,
-          condition: result.condition,
-          free_shipping: result.shipping.free_shipping,
-        });
-      }
+          categories: [],
+          items: {
+            id: "",
+            title: "",
 
-      jsonResponse = {
-        author: {
-          name: "Gleiber",
-          lastname: "Carreño",
-        },
-        categories: arrayCategory.unique(),
-        items: items,
-      };
-      //console.log(jsonResponse);
-      res.send(JSON.stringify(jsonResponse));
+            price: {
+              currency: "",
+              amount: "",
+              decimals: "",
+            },
+            picture: "",
+            condition: "",
+            free_shipping: "",
+          },
+        };
+        res.send(jsonRespuesta);
+      } else {
+        if (
+          responseQuery.filters[0].values[0] !== undefined ||
+          responseQuery.filters[0].values[0] !== null
+        ) {
+          for (const item of responseQuery.filters[0].values[0]
+            .path_from_root) {
+            arrayCategory.push(item.name);
+          }
+        }
+
+        for (const result of responseQuery.results) {
+          items.push({
+            id: result.id,
+            title: result.title,
+
+            price: {
+              currency: result.currency_id,
+              amount: parseMil(result.price),
+              decimals: result.price.countDecimals(),
+            },
+            picture: result.thumbnail,
+            condition: result.condition,
+            free_shipping: result.shipping.free_shipping,
+          });
+        }
+
+        jsonResponse = {
+          author: {
+            name: "Gleiber",
+            lastname: "Carreño",
+          },
+          categories: arrayCategory.unique(),
+          items: items.slice(0, 4),
+        };
+        res.send(jsonResponse);
+      }
     }
   });
 });
@@ -127,7 +176,7 @@ app.get("/api/items/:id", (req, res) => {
 
           price: {
             currency: responseQueryId.currency_id,
-            amount: responseQueryId.price,
+            amount: parseMil(responseQueryId.price),
             decimals: responseQueryId.price.countDecimals(),
           },
           picture: responseQueryId.thumbnail,
