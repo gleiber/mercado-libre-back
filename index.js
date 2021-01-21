@@ -19,6 +19,7 @@ Number.prototype.countDecimals = function () {
   if (Math.floor(this.valueOf()) === this.valueOf()) return 0;
   return this.toString().split(".")[1].length || 0;
 };
+
 parseMil = (price) => {
   let num = price;
   const coma = num.toString().indexOf(".") !== -1 ? true : false;
